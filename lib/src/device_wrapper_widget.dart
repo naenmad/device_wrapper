@@ -1,6 +1,19 @@
+import 'package:flutter/foundation.dart' show kIsWeb, TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'device_mode.dart';
 import 'device_config.dart';
+
+/// Behavior when running on a mobile device
+enum MobileDeviceBehavior {
+  /// Always show the device frame wrapper
+  alwaysShowFrame,
+  
+  /// Always render child directly without frame
+  alwaysHideFrame,
+  
+  /// Show a toggle to let user choose
+  showToggle,
+}
 
 /// A widget that wraps its child in a device frame with fixed dimensions.
 /// 
@@ -40,6 +53,12 @@ class DeviceWrapper extends StatefulWidget {
   /// Background color for the area outside the device frame
   final Color? backgroundColor;
 
+  /// Behavior when app is running on a mobile device (iOS/Android)
+  /// - [MobileDeviceBehavior.alwaysShowFrame]: Always show device frame
+  /// - [MobileDeviceBehavior.alwaysHideFrame]: Always render child directly
+  /// - [MobileDeviceBehavior.showToggle]: Show toggle to let user choose
+  final MobileDeviceBehavior mobileDeviceBehavior;
+
   const DeviceWrapper({
     super.key,
     required this.child,
@@ -50,6 +69,7 @@ class DeviceWrapper extends StatefulWidget {
     this.onModeChanged,
     this.enabled = true,
     this.backgroundColor,
+    this.mobileDeviceBehavior = MobileDeviceBehavior.showToggle,
   });
 
   @override
@@ -61,11 +81,34 @@ class _DeviceWrapperState extends State<DeviceWrapper>
   late DeviceMode _currentMode;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
+  bool _showDeviceFrame = true;
+
+  /// Check if running on a mobile device (iOS or Android, not web)
+  bool get _isOnMobileDevice {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.iOS ||
+           defaultTargetPlatform == TargetPlatform.android;
+  }
 
   @override
   void initState() {
     super.initState();
     _currentMode = widget.initialMode;
+    
+    // Set initial device frame visibility based on mobile behavior
+    if (_isOnMobileDevice) {
+      switch (widget.mobileDeviceBehavior) {
+        case MobileDeviceBehavior.alwaysShowFrame:
+          _showDeviceFrame = true;
+          break;
+        case MobileDeviceBehavior.alwaysHideFrame:
+          _showDeviceFrame = false;
+          break;
+        case MobileDeviceBehavior.showToggle:
+          _showDeviceFrame = false; // Default to hide on mobile
+          break;
+      }
+    }
     
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -113,6 +156,21 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     // If wrapper is disabled, render child directly
     if (!widget.enabled) {
       return widget.child;
+    }
+
+    // Handle mobile device behavior
+    if (_isOnMobileDevice) {
+      switch (widget.mobileDeviceBehavior) {
+        case MobileDeviceBehavior.alwaysHideFrame:
+          return widget.child;
+        case MobileDeviceBehavior.showToggle:
+          if (!_showDeviceFrame) {
+            return _buildMobileToggleOverlay();
+          }
+          break;
+        case MobileDeviceBehavior.alwaysShowFrame:
+          break;
+      }
     }
 
     final config = _currentConfig;
@@ -169,6 +227,14 @@ class _DeviceWrapperState extends State<DeviceWrapper>
                     child: _buildModeToggle(),
                   ),
                 
+                // Hide device frame button (only on mobile with showToggle behavior)
+                if (_isOnMobileDevice && widget.mobileDeviceBehavior == MobileDeviceBehavior.showToggle)
+                  Positioned(
+                    top: 20,
+                    left: 20,
+                    child: _buildHideFrameButton(),
+                  ),
+                
                 // Device info label
                 Positioned(
                   bottom: 20,
@@ -180,6 +246,117 @@ class _DeviceWrapperState extends State<DeviceWrapper>
             ),
           );
         },
+      ),
+    );
+  }
+
+  /// Build overlay for mobile devices with toggle option
+  Widget _buildMobileToggleOverlay() {
+    return Stack(
+      children: [
+        // Render the actual app
+        widget.child,
+        
+        // Floating button to show device frame
+        Positioned(
+          bottom: 20,
+          right: 20,
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _showDeviceFrame = true;
+                  });
+                },
+                borderRadius: BorderRadius.circular(28),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1C1C1E).withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.phone_iphone,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Show Device Frame',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Build button to hide device frame (shown when frame is visible on mobile)
+  Widget _buildHideFrameButton() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _showDeviceFrame = false;
+          });
+        },
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1C1C1E).withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.fullscreen_exit,
+                color: Colors.white,
+                size: 20,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Hide Frame',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -241,16 +418,31 @@ class _DeviceWrapperState extends State<DeviceWrapper>
                 ),
                 child: Container(
                   color: Colors.white,
-                  child: MediaQuery(
-                    data: MediaQueryData(
-                      size: Size(config.width, config.height),
-                      devicePixelRatio: 3.0,
-                      padding: EdgeInsets.only(
-                        top: config.showNotch ? 59.0 : 24.0,
-                        bottom: config.showHomeIndicator ? 34.0 : 0.0,
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    alignment: Alignment.center,
+                    child: SizedBox(
+                      width: config.width * config.devicePixelRatio,
+                      height: config.height * config.devicePixelRatio,
+                      child: MediaQuery(
+                        data: MediaQueryData(
+                          size: Size(
+                            config.width * config.devicePixelRatio,
+                            config.height * config.devicePixelRatio,
+                          ),
+                          devicePixelRatio: 1.0,
+                          padding: EdgeInsets.only(
+                            top: config.showNotch 
+                                ? 59.0 * config.devicePixelRatio 
+                                : 24.0 * config.devicePixelRatio,
+                            bottom: config.showHomeIndicator 
+                                ? 34.0 * config.devicePixelRatio 
+                                : 0.0,
+                          ),
+                        ),
+                        child: widget.child,
                       ),
                     ),
-                    child: widget.child,
                   ),
                 ),
               ),
@@ -340,7 +532,7 @@ class _DeviceWrapperState extends State<DeviceWrapper>
   }
 
   Widget _buildSideButtons(DeviceConfig config) {
-    final buttonColor = const Color(0xFF2a2a2e);
+    const buttonColor = Color(0xFF2a2a2e);
     
     return Stack(
       children: [
@@ -488,7 +680,7 @@ class _DeviceWrapperState extends State<DeviceWrapper>
               const SizedBox(width: 8),
               Text(
                 mode.displayName,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -511,8 +703,8 @@ class _DeviceWrapperState extends State<DeviceWrapper>
         ),
         child: Text(
           '${config.width.toInt()} × ${config.height.toInt()} • ${_currentMode.displayName}',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+          style: const TextStyle(
+            color: Color(0xB3FFFFFF),
             fontSize: 12,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,

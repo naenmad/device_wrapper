@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-12-03
+
+### Added
+- **Mobile Device Behavior**: New `mobileDeviceBehavior` parameter to control how the wrapper behaves on real mobile devices (iOS/Android)
+  - `MobileDeviceBehavior.alwaysShowFrame`: Always show the device frame
+  - `MobileDeviceBehavior.alwaysHideFrame`: Always render child directly without frame
+  - `MobileDeviceBehavior.showToggle`: Show a floating toggle button to let users choose (default)
+- Floating "Show Device Frame" button when running on mobile devices
+- "Hide Frame" button to exit device frame view on mobile
+- Auto-detection of mobile platform (iOS/Android, excluding web)
+
+### Changed
+- Updated device configurations:
+  - **Mobile (iPhone 16 Pro)**: 393×852 logical pixels
+  - **Tablet (iPad Pro 11")**: 834×1194 logical pixels
+- Improved rendering with proper MediaQuery configuration
+
+## [1.0.2] - 2025-12-03
+
+### Changed
+- Updated device configurations with accurate specifications:
+  - **Mobile (iPhone 16 Pro)**: 393×852 logical pixels (1179×2556 @ 3x scale), border radius 55px, border width 12px
+  - **Tablet (iPad 10th Gen)**: 820×1180 logical pixels (1640×2360 @ 2x scale), border radius 18px, border width 14px
+- Improved documentation with actual device physical and logical resolutions
+- Added aspect ratio information to device configs
+
+### Fixed
+- Fixed all static analysis lint issues (6 issues resolved)
+- Added `const` to constant values and TextStyle constructors for better performance
+
 ## [1.0.0] - 2025-12-03
 
 ### Added

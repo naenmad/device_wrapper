@@ -3,11 +3,15 @@ import 'device_mode.dart';
 
 /// Configuration class for device dimensions and styling
 class DeviceConfig {
-  /// Width of the device frame
+  /// Width of the device frame (logical pixels / device points)
   final double width;
   
-  /// Height of the device frame
+  /// Height of the device frame (logical pixels / device points)
   final double height;
+  
+  /// Device pixel ratio (scale factor for content)
+  /// iPhone uses 3.0, iPad uses 2.0
+  final double devicePixelRatio;
   
   /// Border radius for the device frame
   final double borderRadius;
@@ -33,6 +37,7 @@ class DeviceConfig {
   const DeviceConfig({
     required this.width,
     required this.height,
+    this.devicePixelRatio = 3.0,
     this.borderRadius = 55.0,
     this.borderWidth = 5.0,
     this.borderColor = const Color(0xFF1C1C1E),
@@ -55,24 +60,30 @@ class DeviceConfig {
     this.showHomeIndicator = true,
   });
 
-  /// iPhone 17 Pro configuration (based on 1206x2622 ratio)
-  /// Scaled to fit screen: 393x852 (standard iPhone Pro logical size)
+  /// iPhone 16 Pro configuration
+  /// Physical resolution: 1179 x 2556 pixels @ 3x scale
+  /// Logical resolution (device points): 393 x 852
+  /// Aspect ratio: ~1:2.17 (9:19.5 Dynamic Island)
   static const DeviceConfig mobile = DeviceConfig(
     width: 393,
     height: 852,
+    devicePixelRatio: 3.0,
     borderRadius: 55.0,
-    borderWidth: 5.0,
+    borderWidth: 12.0,
     showNotch: true,
     showHomeIndicator: true,
   );
 
-  /// iPad Gen 11 configuration (based on 2360x1640 ratio)
-  /// Portrait mode scaled: 820x1180
+  /// iPad Pro 11" / iPad Air configuration  
+  /// Physical resolution: 1668 x 2388 pixels @ 2x scale
+  /// Logical resolution (device points): 834 x 1194
+  /// Aspect ratio: ~1:1.43
   static const DeviceConfig tablet = DeviceConfig(
-    width: 820,
-    height: 1180,
-    borderRadius: 24.0,
-    borderWidth: 6.0,
+    width: 834,
+    height: 1194,
+    devicePixelRatio: 2.0,
+    borderRadius: 18.0,
+    borderWidth: 14.0,
     showNotch: false,
     showHomeIndicator: true,
   );
@@ -91,6 +102,7 @@ class DeviceConfig {
   DeviceConfig copyWith({
     double? width,
     double? height,
+    double? devicePixelRatio,
     double? borderRadius,
     double? borderWidth,
     Color? borderColor,
@@ -102,6 +114,7 @@ class DeviceConfig {
     return DeviceConfig(
       width: width ?? this.width,
       height: height ?? this.height,
+      devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       borderRadius: borderRadius ?? this.borderRadius,
       borderWidth: borderWidth ?? this.borderWidth,
       borderColor: borderColor ?? this.borderColor,

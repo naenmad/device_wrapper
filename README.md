@@ -3,14 +3,15 @@
 [![pub package](https://img.shields.io/pub/v/device_wrapper.svg)](https://pub.dev/packages/device_wrapper)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Flutter package to wrap pages with realistic device frames (iPhone 17 Pro, iPad Gen 11) for web/desktop preview. Features auto-scaling to fit any screen size, Dynamic Island, and smooth mode switching animations.
+A Flutter package to wrap pages with realistic device frames (iPhone 16 Pro, iPad Pro 11") for web/desktop preview. Features auto-scaling to fit any screen size, Dynamic Island, mobile device toggle, and smooth mode switching animations.
 
 ## Features
 
-- 📱 **Realistic Device Frames**: iPhone 17 Pro (393×852) and iPad Gen 11 (820×1180) with accurate dimensions
+- 📱 **Realistic Device Frames**: iPhone 16 Pro (393×852) and iPad Pro 11" (834×1194) with accurate dimensions
 - 🏝️ **Dynamic Island**: Modern iPhone-style Dynamic Island with camera lens effect
 - 📐 **Auto-Scaling**: Automatically scales device to fit within browser/window size
 - 🔄 **Mode Toggle**: Built-in animated toggle button to switch between mobile and tablet
+- 📲 **Mobile Device Support**: Smart detection with optional toggle to show/hide device frame on real devices
 - 🎨 **Titanium Frame**: Gradient frame design mimicking real device bezels
 - ⚙️ **Customizable**: Configure device dimensions, colors, and styling
 - 🎬 **Smooth Animations**: Animated transitions when switching between modes
@@ -21,7 +22,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  device_wrapper: ^1.0.0
+  device_wrapper: ^1.0.3
 ```
 
 Then run:
@@ -118,6 +119,30 @@ DeviceWrapper(
 )
 ```
 
+### Mobile Device Behavior
+
+Control how the wrapper behaves when running on a real mobile device (iOS/Android):
+
+```dart
+// Default: Show toggle button on mobile devices
+DeviceWrapper(
+  mobileDeviceBehavior: MobileDeviceBehavior.showToggle,
+  child: MyApp(),
+)
+
+// Always show device frame even on mobile
+DeviceWrapper(
+  mobileDeviceBehavior: MobileDeviceBehavior.alwaysShowFrame,
+  child: MyApp(),
+)
+
+// Always hide frame on mobile (render child directly)
+DeviceWrapper(
+  mobileDeviceBehavior: MobileDeviceBehavior.alwaysHideFrame,
+  child: MyApp(),
+)
+```
+
 ## API Reference
 
 ### DeviceWrapper
@@ -132,13 +157,24 @@ DeviceWrapper(
 | `onModeChanged` | `ValueChanged<DeviceMode>?` | `null` | Callback when device mode changes |
 | `enabled` | `bool` | `true` | Whether the wrapper is enabled |
 | `backgroundColor` | `Color?` | `null` | Background color for the area outside the device |
+| `mobileDeviceBehavior` | `MobileDeviceBehavior` | `showToggle` | Behavior when running on mobile devices |
 
 ### DeviceMode
 
 ```dart
 enum DeviceMode {
-  mobile,  // iPhone 17 Pro (393×852)
-  tablet,  // iPad Gen 11 (820×1180)
+  mobile,  // iPhone 16 Pro (393×852)
+  tablet,  // iPad Pro 11" (834×1194)
+}
+```
+
+### MobileDeviceBehavior
+
+```dart
+enum MobileDeviceBehavior {
+  alwaysShowFrame,  // Always show the device frame wrapper
+  alwaysHideFrame,  // Always render child directly without frame
+  showToggle,       // Show a toggle to let user choose (default)
 }
 ```
 
@@ -158,17 +194,17 @@ enum DeviceMode {
 
 ## Default Device Configurations
 
-### Mobile - iPhone 17 Pro (393×852)
-- Scaled from actual resolution: 1206×2622
+### Mobile - iPhone 16 Pro (393×852)
+- Physical resolution: 1179×2556 @ 3x scale
 - Border radius: 55px (rounded corners)
-- Border width: 5px (thin titanium bezel)
+- Border width: 12px (titanium bezel)
 - Dynamic Island with camera lens effect
 - Home indicator bar
 
-### Tablet - iPad Gen 11 (820×1180)
-- Scaled from actual resolution: 2360×1640
-- Border radius: 24px
-- Border width: 6px
+### Tablet - iPad Pro 11" (834×1194)
+- Physical resolution: 1668×2388 @ 2x scale
+- Border radius: 18px
+- Border width: 14px
 - Home indicator only (no notch)
 
 ## Auto-Scaling Behavior
@@ -214,6 +250,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Author
 
-**Citiasia Inc.**
+**Madnaen**
 
-- GitHub: [@citiasia-inc](https://github.com/citiasia-inc)
+- GitHub: [@naenmad](https://github.com/naenmad)

@@ -133,9 +133,18 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     await _animationController.forward();
     
     setState(() {
-      _currentMode = _currentMode == DeviceMode.mobile 
-          ? DeviceMode.tablet 
-          : DeviceMode.mobile;
+      // Cycle through modes: mobile -> tablet -> screenOnly -> mobile
+      switch (_currentMode) {
+        case DeviceMode.mobile:
+          _currentMode = DeviceMode.tablet;
+          break;
+        case DeviceMode.tablet:
+          _currentMode = DeviceMode.screenOnly;
+          break;
+        case DeviceMode.screenOnly:
+          _currentMode = DeviceMode.mobile;
+          break;
+      }
     });
     
     widget.onModeChanged?.call(_currentMode);
@@ -144,10 +153,13 @@ class _DeviceWrapperState extends State<DeviceWrapper>
   }
 
   DeviceConfig get _currentConfig {
-    if (_currentMode == DeviceMode.mobile) {
-      return widget.mobileConfig ?? DeviceConfig.mobile;
-    } else {
-      return widget.tabletConfig ?? DeviceConfig.tablet;
+    switch (_currentMode) {
+      case DeviceMode.mobile:
+        return widget.mobileConfig ?? DeviceConfig.mobile;
+      case DeviceMode.tablet:
+        return widget.tabletConfig ?? DeviceConfig.tablet;
+      case DeviceMode.screenOnly:
+        return widget.mobileConfig ?? DeviceConfig.screenOnly;
     }
   }
 
@@ -383,6 +395,11 @@ class _DeviceWrapperState extends State<DeviceWrapper>
   }
 
   Widget _buildDeviceFrame(DeviceConfig config) {
+    // For screenOnly mode, just render the screen without frame
+    if (_currentMode == DeviceMode.screenOnly) {
+      return _buildScreenOnly(config);
+    }
+    
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOutCubic,
@@ -418,31 +435,16 @@ class _DeviceWrapperState extends State<DeviceWrapper>
                 ),
                 child: Container(
                   color: Colors.white,
-                  child: FittedBox(
-                    fit: BoxFit.contain,
-                    alignment: Alignment.center,
-                    child: SizedBox(
-                      width: config.width * config.devicePixelRatio,
-                      height: config.height * config.devicePixelRatio,
-                      child: MediaQuery(
-                        data: MediaQueryData(
-                          size: Size(
-                            config.width * config.devicePixelRatio,
-                            config.height * config.devicePixelRatio,
-                          ),
-                          devicePixelRatio: 1.0,
-                          padding: EdgeInsets.only(
-                            top: config.showNotch 
-                                ? 59.0 * config.devicePixelRatio 
-                                : 24.0 * config.devicePixelRatio,
-                            bottom: config.showHomeIndicator 
-                                ? 34.0 * config.devicePixelRatio 
-                                : 0.0,
-                          ),
-                        ),
-                        child: widget.child,
+                  child: MediaQuery(
+                    data: MediaQueryData(
+                      size: Size(config.width, config.height),
+                      devicePixelRatio: config.devicePixelRatio,
+                      padding: EdgeInsets.only(
+                        top: config.showNotch ? 59.0 : 24.0,
+                        bottom: config.showHomeIndicator ? 34.0 : 0.0,
                       ),
                     ),
+                    child: widget.child,
                   ),
                 ),
               ),
@@ -470,6 +472,42 @@ class _DeviceWrapperState extends State<DeviceWrapper>
           // Side buttons (volume, power)
           _buildSideButtons(config),
         ],
+      ),
+    );
+  }
+
+  /// Build screen only mode (without device frame)
+  Widget _buildScreenOnly(DeviceConfig config) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOutCubic,
+      width: config.width,
+      height: config.height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: MediaQuery(
+          data: MediaQueryData(
+            size: Size(config.width, config.height),
+            devicePixelRatio: config.devicePixelRatio,
+            padding: const EdgeInsets.only(
+              top: 24.0,
+              bottom: 0.0,
+            ),
+          ),
+          child: widget.child,
+        ),
       ),
     );
   }

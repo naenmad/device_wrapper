@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-12-07
+
+### Added
+- **Screen Only Mode**: New `DeviceMode.screenOnly` option to display just the screen without device frame
+  - Perfect for cleaner previews and documentation screenshots
+  - Cycles through: Mobile → Tablet → Screen Only → Mobile
+
+### Fixed
+- **Critical Fix**: Fixed content rendering issue where app content appeared too zoomed in/large inside device frame
+  - Removed incorrect FittedBox and devicePixelRatio multiplication that caused layout issues
+  - MediaQuery now correctly reports device dimensions without scaling artifacts
+  - Content now renders at proper size matching actual device dimensions
+
+### Changed
+- Simplified content rendering logic for more accurate device simulation
+- Screen only mode uses clean rounded corners with subtle shadow
+
 ## [1.0.3] - 2025-12-03
 
 ### Added

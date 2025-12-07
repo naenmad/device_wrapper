@@ -10,8 +10,9 @@ A Flutter package to wrap pages with realistic device frames (iPhone 16 Pro, iPa
 - 📱 **Realistic Device Frames**: iPhone 16 Pro (393×852) and iPad Pro 11" (834×1194) with accurate dimensions
 - 🏝️ **Dynamic Island**: Modern iPhone-style Dynamic Island with camera lens effect
 - 📐 **Auto-Scaling**: Automatically scales device to fit within browser/window size
-- 🔄 **Mode Toggle**: Built-in animated toggle button to switch between mobile and tablet
+- 🔄 **Mode Toggle**: Built-in animated toggle button to switch between mobile, tablet, and screen-only modes
 - 📲 **Mobile Device Support**: Smart detection with optional toggle to show/hide device frame on real devices
+- 🖥️ **Screen Only Mode**: Display just the screen without device frame for cleaner previews
 - 🎨 **Titanium Frame**: Gradient frame design mimicking real device bezels
 - ⚙️ **Customizable**: Configure device dimensions, colors, and styling
 - 🎬 **Smooth Animations**: Animated transitions when switching between modes
@@ -22,7 +23,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  device_wrapper: ^1.0.3
+  device_wrapper: ^1.0.4
 ```
 
 Then run:
@@ -163,8 +164,9 @@ DeviceWrapper(
 
 ```dart
 enum DeviceMode {
-  mobile,  // iPhone 16 Pro (393×852)
-  tablet,  // iPad Pro 11" (834×1194)
+  mobile,      // iPhone 16 Pro (393×852)
+  tablet,      // iPad Pro 11" (834×1194)
+  screenOnly,  // Screen only without device frame
 }
 ```
 

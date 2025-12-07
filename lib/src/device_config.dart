@@ -88,6 +88,18 @@ class DeviceConfig {
     showHomeIndicator: true,
   );
 
+  /// Screen only configuration (no device frame, just screen)
+  /// Uses mobile dimensions by default
+  static const DeviceConfig screenOnly = DeviceConfig(
+    width: 393,
+    height: 852,
+    devicePixelRatio: 3.0,
+    borderRadius: 0.0,
+    borderWidth: 0.0,
+    showNotch: false,
+    showHomeIndicator: false,
+  );
+
   /// Get configuration for a specific device mode
   static DeviceConfig fromMode(DeviceMode mode) {
     switch (mode) {
@@ -95,6 +107,8 @@ class DeviceConfig {
         return mobile;
       case DeviceMode.tablet:
         return tablet;
+      case DeviceMode.screenOnly:
+        return screenOnly;
     }
   }
 

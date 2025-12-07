@@ -1,10 +1,13 @@
 /// Enum representing the device mode for the wrapper
 enum DeviceMode {
-  /// Mobile device mode (360x690)
+  /// Mobile device mode (iPhone 16 Pro - 393x852)
   mobile,
   
-  /// Tablet device mode (768x1024)
+  /// Tablet device mode (iPad Pro 11" - 834x1194)
   tablet,
+  
+  /// Screen only mode - just the screen without device frame
+  screenOnly,
 }
 
 /// Extension to provide additional properties for DeviceMode
@@ -16,6 +19,8 @@ extension DeviceModeExtension on DeviceMode {
         return 'Mobile';
       case DeviceMode.tablet:
         return 'Tablet';
+      case DeviceMode.screenOnly:
+        return 'Screen Only';
     }
   }
 
@@ -26,6 +31,8 @@ extension DeviceModeExtension on DeviceMode {
         return 'phone_android';
       case DeviceMode.tablet:
         return 'tablet_android';
+      case DeviceMode.screenOnly:
+        return 'crop_free';
     }
   }
 }

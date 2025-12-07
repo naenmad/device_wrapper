@@ -1,31 +1,47 @@
-import 'package:flutter/material.dart';
 import 'package:device_wrapper/device_wrapper.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(const MyApp());
 }
+
+final themeModeNotifier = ValueNotifier(ThemeMode.light);
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Device Wrapper Demo',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: DeviceWrapper(
-        initialMode: DeviceMode.mobile,
-        showModeToggle: true,
-        onModeChanged: (mode) {
-          debugPrint('Device mode changed to: ${mode.displayName}');
-        },
-        child: const DemoHomePage(),
-      ),
-    );
+    return ValueListenableBuilder(
+        valueListenable: themeModeNotifier,
+        builder: (BuildContext context, ThemeMode value, _) {
+          return MaterialApp(
+            title: 'Device Wrapper Demo',
+            debugShowCheckedModeBanner: false,
+            themeMode: value,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.deepPurple,
+                brightness: Brightness.light,
+              ),
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.deepPurple,
+                brightness: Brightness.dark,
+              ),
+              useMaterial3: true,
+            ).copyWith(scaffoldBackgroundColor: Colors.black),
+            home: DeviceWrapper(
+              showModeToggle: true,
+              onModeChanged: (mode) {
+                debugPrint('Device mode changed to: ${mode.name}');
+              },
+              child: const DemoHomePage(),
+            ),
+          );
+        });
   }
 }
 
@@ -36,12 +52,30 @@ class DemoHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      // backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
         title: const Text('Demo App'),
         elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () {
+              if (themeModeNotifier.value == ThemeMode.light) {
+                themeModeNotifier.value = ThemeMode.dark;
+              } else {
+                themeModeNotifier.value = ThemeMode.light;
+              }
+            },
+            icon: ValueListenableBuilder(
+                valueListenable: themeModeNotifier,
+                builder: (BuildContext context, ThemeMode value, _) {
+                  return Icon(value == ThemeMode.light
+                      ? Icons.light_mode_outlined
+                      : Icons.dark_mode_outlined);
+                }),
+          )
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -116,21 +150,25 @@ class DemoHomePage extends StatelessWidget {
                     childAspectRatio: 1.2,
                     children: [
                       _buildFeatureCard(
+                        context: context,
                         icon: Icons.dashboard,
                         title: 'Dashboard',
                         color: Colors.blue,
                       ),
                       _buildFeatureCard(
+                        context: context,
                         icon: Icons.message,
                         title: 'Messages',
                         color: Colors.green,
                       ),
                       _buildFeatureCard(
+                        context: context,
                         icon: Icons.settings,
                         title: 'Settings',
                         color: Colors.orange,
                       ),
                       _buildFeatureCard(
+                        context: context,
                         icon: Icons.analytics,
                         title: 'Analytics',
                         color: Colors.purple,
@@ -156,18 +194,21 @@ class DemoHomePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   _buildActivityItem(
+                    context: context,
                     icon: Icons.check_circle,
                     title: 'Task Completed',
                     subtitle: '2 minutes ago',
                     color: Colors.green,
                   ),
                   _buildActivityItem(
+                    context: context,
                     icon: Icons.notifications,
                     title: 'New Notification',
                     subtitle: '15 minutes ago',
                     color: Colors.blue,
                   ),
                   _buildActivityItem(
+                    context: context,
                     icon: Icons.update,
                     title: 'System Update',
                     subtitle: '1 hour ago',
@@ -214,13 +255,14 @@ class DemoHomePage extends StatelessWidget {
   }
 
   Widget _buildFeatureCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required Color color,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -255,6 +297,7 @@ class DemoHomePage extends StatelessWidget {
   }
 
   Widget _buildActivityItem({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -264,7 +307,7 @@ class DemoHomePage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(

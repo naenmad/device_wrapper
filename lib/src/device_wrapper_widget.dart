@@ -130,22 +130,11 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     super.dispose();
   }
 
-  void _toggleMode() async {
+  void _setMode(DeviceMode mode) async {
     await _animationController.forward();
 
     setState(() {
-      // Cycle through modes: mobile -> tablet -> screenOnly -> mobile
-      switch (_currentMode) {
-        case DeviceMode.mobile:
-          _currentMode = DeviceMode.tablet;
-          break;
-        case DeviceMode.tablet:
-          _currentMode = DeviceMode.screenOnly;
-          break;
-        case DeviceMode.screenOnly:
-          _currentMode = DeviceMode.mobile;
-          break;
-      }
+      _currentMode = mode;
     });
 
     widget.onModeChanged?.call(_currentMode);
@@ -690,6 +679,7 @@ class _DeviceWrapperState extends State<DeviceWrapper>
         children: [
           _buildModeButton(DeviceMode.mobile, Icons.phone_android),
           _buildModeButton(DeviceMode.tablet, Icons.tablet_android),
+          _buildModeButton(DeviceMode.screenOnly, Icons.crop_free),
         ],
       ),
     );
@@ -701,7 +691,7 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     return GestureDetector(
       onTap: () {
         if (_currentMode != mode) {
-          _toggleMode();
+          _setMode(mode);
         }
       },
       child: AnimatedContainer(

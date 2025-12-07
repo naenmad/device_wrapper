@@ -41,7 +41,7 @@ class DeviceConfig {
     this.borderRadius = 55.0,
     this.borderWidth = 5.0,
     this.borderColor = const Color(0xFF1C1C1E),
-    this.backgroundColor = const Color(0xFF1A1A2E),
+    this.backgroundColor = const Color(0xFF000000),
     this.shadows = const [
       BoxShadow(
         color: Color(0x50000000),

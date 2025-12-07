@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2025-12-07
+
+### Added
+- **Screen Only Toggle Button**: Added dedicated toggle button for Screen Only mode in the mode switcher
+  - Now shows 3 buttons: Mobile, Tablet, and Screen Only
+  - Click directly on each mode instead of cycling through
+
+### Changed
+- **Default Background Color**: Changed from purple (#1A1A2E) to black (#000000) for cleaner appearance
+- Mode switching now uses direct selection instead of cycling
+
 ## [1.0.5] - 2025-12-07
 
 ### Fixed

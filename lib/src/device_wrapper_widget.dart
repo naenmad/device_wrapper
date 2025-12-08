@@ -1,8 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart'
     show kIsWeb, TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
-import 'device_mode.dart';
+
 import 'device_config.dart';
+import 'device_mode.dart';
 
 /// Behavior when running on a mobile device
 enum MobileDeviceBehavior {
@@ -33,26 +36,32 @@ class DeviceWrapper extends StatefulWidget {
   /// The child widget to wrap inside the device frame
   final Widget child;
 
-  /// Initial device mode (mobile or tablet)
-  final DeviceMode initialMode;
+  /// Device List
+  final List<DeviceConfig> deviceList;
+
+  /// Initial device
+  final DeviceConfig? initialDevice;
 
   /// Whether to show the mode toggle button
   final bool showModeToggle;
 
-  /// Custom configuration for mobile mode
-  final DeviceConfig? mobileConfig;
-
-  /// Custom configuration for tablet mode
-  final DeviceConfig? tabletConfig;
-
   /// Callback when device mode changes
-  final ValueChanged<DeviceMode>? onModeChanged;
+  final ValueChanged<DeviceConfig>? onModeChanged;
 
   /// Whether the wrapper is enabled (if false, child is rendered directly)
   final bool enabled;
 
   /// Background color for the area outside the device frame
-  final Color? backgroundColor;
+  final Color backgroundColor;
+
+  /// Grid line color for the area outside the device frame
+  final Color? gridColor;
+
+  /// Default TextStyle for the area outside the device frame
+  final TextStyle textStyle;
+
+  /// Device brightness (If the DeviceWrapper child is MaterialApp, set brightness)
+  final Brightness? brightness;
 
   /// Behavior when app is running on a mobile device (iOS/Android)
   /// - [MobileDeviceBehavior.alwaysShowFrame]: Always show device frame
@@ -63,13 +72,19 @@ class DeviceWrapper extends StatefulWidget {
   const DeviceWrapper({
     super.key,
     required this.child,
-    this.initialMode = DeviceMode.mobile,
+    this.deviceList = DeviceConfig.deviceList,
+    this.initialDevice,
     this.showModeToggle = true,
-    this.mobileConfig,
-    this.tabletConfig,
     this.onModeChanged,
     this.enabled = true,
-    this.backgroundColor,
+    this.backgroundColor = Colors.black,
+    this.gridColor = const Color(0x1AFFFFFF),
+    this.brightness,
+    this.textStyle = const TextStyle(
+      color: Colors.white,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+    ),
     this.mobileDeviceBehavior = MobileDeviceBehavior.showToggle,
   });
 
@@ -79,7 +94,7 @@ class DeviceWrapper extends StatefulWidget {
 
 class _DeviceWrapperState extends State<DeviceWrapper>
     with SingleTickerProviderStateMixin {
-  late DeviceMode _currentMode;
+  late DeviceConfig _currentDevice;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   bool _showDeviceFrame = true;
@@ -94,7 +109,7 @@ class _DeviceWrapperState extends State<DeviceWrapper>
   @override
   void initState() {
     super.initState();
-    _currentMode = widget.initialMode;
+    _currentDevice = widget.initialDevice ?? widget.deviceList.first;
 
     // Set initial device frame visibility based on mobile behavior
     if (_isOnMobileDevice) {
@@ -130,27 +145,16 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     super.dispose();
   }
 
-  void _setMode(DeviceMode mode) async {
+  void _setDevice(DeviceConfig device) async {
     await _animationController.forward();
 
     setState(() {
-      _currentMode = mode;
+      _currentDevice = device;
     });
 
-    widget.onModeChanged?.call(_currentMode);
+    widget.onModeChanged?.call(_currentDevice);
 
     await _animationController.reverse();
-  }
-
-  DeviceConfig get _currentConfig {
-    switch (_currentMode) {
-      case DeviceMode.mobile:
-        return widget.mobileConfig ?? DeviceConfig.mobile;
-      case DeviceMode.tablet:
-        return widget.tabletConfig ?? DeviceConfig.tablet;
-      case DeviceMode.screenOnly:
-        return widget.mobileConfig ?? DeviceConfig.screenOnly;
-    }
   }
 
   @override
@@ -175,84 +179,91 @@ class _DeviceWrapperState extends State<DeviceWrapper>
       }
     }
 
-    final config = _currentConfig;
-    final bgColor = widget.backgroundColor ?? config.backgroundColor;
+    final config = _currentDevice;
+    final bgColor = config.backgroundColor ?? widget.backgroundColor;
+
+    final gridColor = config.gridColor ?? widget.gridColor;
 
     // Use Directionality to provide text direction context
     // since we're wrapping MaterialApp from outside
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Calculate scale factor to fit device within screen
-          // Leave padding for toggle button (top) and device info (bottom)
-          final availableHeight =
-              constraints.maxHeight - 100; // 50 top + 50 bottom padding
-          final availableWidth =
-              constraints.maxWidth - 80; // 40 left + 40 right padding
+      child: DefaultTextStyle(
+        // Eliminate double underline warning on Text widgets
+        style: widget.textStyle,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Calculate scale factor to fit device within screen
+            // Leave padding for toggle button (top) and device info (bottom)
+            final availableHeight =
+                constraints.maxHeight - 100; // 50 top + 50 bottom padding
+            final availableWidth =
+                constraints.maxWidth - 80; // 40 left + 40 right padding
 
-          final deviceTotalHeight = config.height + (config.borderWidth * 2);
-          final deviceTotalWidth = config.width + (config.borderWidth * 2);
+            final deviceTotalHeight = config.height + (config.borderWidth * 2);
+            final deviceTotalWidth = config.width + (config.borderWidth * 2);
 
-          // Calculate scale to fit within available space
-          final heightScale = availableHeight / deviceTotalHeight;
-          final widthScale = availableWidth / deviceTotalWidth;
+            // Calculate scale to fit within available space
+            final heightScale = availableHeight / deviceTotalHeight;
+            final widthScale = availableWidth / deviceTotalWidth;
 
-          // Use the smaller scale to ensure device fits both dimensions
-          // But don't scale up beyond 1.0
-          final scale = (heightScale < widthScale ? heightScale : widthScale)
-              .clamp(0.3, 1.0);
+            // Use the smaller scale to ensure device fits both dimensions
+            // But don't scale up beyond 1.0
+            final scale = (heightScale < widthScale ? heightScale : widthScale)
+                .clamp(0.3, 1.0);
 
-          return Container(
-            color: bgColor,
-            child: Stack(
-              children: [
-                // Background pattern
-                _buildBackgroundPattern(bgColor),
+            return Container(
+              color: bgColor,
+              child: Stack(
+                children: [
+                  if (gridColor != null)
+                    // Background pattern
+                    _buildBackgroundPattern(bgColor, gridColor),
 
-                // Device frame centered with auto-scaling
-                Center(
-                  child: AnimatedBuilder(
-                    animation: _scaleAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _scaleAnimation.value * scale,
-                        child: child,
-                      );
-                    },
-                    child: _buildDeviceFrame(config),
+                  // Device frame centered with auto-scaling
+                  Center(
+                    child: AnimatedBuilder(
+                      animation: _scaleAnimation,
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: _scaleAnimation.value * scale,
+                          child: child,
+                        );
+                      },
+                      child: _buildDeviceFrame(config),
+                    ),
                   ),
-                ),
 
-                // Mode toggle button
-                if (widget.showModeToggle)
+                  // Mode toggle button
+                  if (widget.showModeToggle)
+                    Positioned(
+                      top: 20,
+                      right: 20,
+                      child: _buildModeToggle(),
+                    ),
+
+                  // Hide device frame button (only on mobile with showToggle behavior)
+                  if (_isOnMobileDevice &&
+                      widget.mobileDeviceBehavior ==
+                          MobileDeviceBehavior.showToggle)
+                    Positioned(
+                      top: 20,
+                      left: 20,
+                      child: _buildHideFrameButton(),
+                    ),
+
+                  // Device info label
                   Positioned(
-                    top: 20,
-                    right: 20,
-                    child: _buildModeToggle(),
+                    bottom: 20,
+                    left: 0,
+                    right: 0,
+                    child: _buildDeviceInfoLabel(config),
                   ),
-
-                // Hide device frame button (only on mobile with showToggle behavior)
-                if (_isOnMobileDevice &&
-                    widget.mobileDeviceBehavior ==
-                        MobileDeviceBehavior.showToggle)
-                  Positioned(
-                    top: 20,
-                    left: 20,
-                    child: _buildHideFrameButton(),
-                  ),
-
-                // Device info label
-                Positioned(
-                  bottom: 20,
-                  left: 0,
-                  right: 0,
-                  child: _buildDeviceInfoLabel(config),
-                ),
-              ],
-            ),
-          );
-        },
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -293,22 +304,17 @@ class _DeviceWrapperState extends State<DeviceWrapper>
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.phone_iphone,
-                        color: Colors.white,
+                        color: widget.textStyle.color,
                         size: 20,
                       ),
-                      SizedBox(width: 8),
-                      Text(
+                      const SizedBox(width: 8),
+                      const Text(
                         'Show Device Frame',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
                       ),
                     ],
                   ),
@@ -345,22 +351,17 @@ class _DeviceWrapperState extends State<DeviceWrapper>
               ),
             ],
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.fullscreen_exit,
-                color: Colors.white,
+                color: widget.textStyle.color,
                 size: 20,
               ),
-              SizedBox(width: 8),
-              Text(
+              const SizedBox(width: 8),
+              const Text(
                 'Hide Frame',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
               ),
             ],
           ),
@@ -369,7 +370,7 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     );
   }
 
-  Widget _buildBackgroundPattern(Color bgColor) {
+  Widget _buildBackgroundPattern(Color bgColor, Color gridColor) {
     return Container(
       decoration: BoxDecoration(
         gradient: RadialGradient(
@@ -383,7 +384,7 @@ class _DeviceWrapperState extends State<DeviceWrapper>
       ),
       child: CustomPaint(
         painter: _GridPatternPainter(
-          color: Colors.white.withValues(alpha: 0.03),
+          color: gridColor,
         ),
         size: Size.infinite,
       ),
@@ -391,11 +392,6 @@ class _DeviceWrapperState extends State<DeviceWrapper>
   }
 
   Widget _buildDeviceFrame(DeviceConfig config) {
-    // For screenOnly mode, just render the screen without frame
-    if (_currentMode == DeviceMode.screenOnly) {
-      return _buildScreenOnly(config);
-    }
-
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOutCubic,
@@ -420,6 +416,8 @@ class _DeviceWrapperState extends State<DeviceWrapper>
         ),
       ),
       child: Stack(
+        // fix side buttons clipping
+        clipBehavior: Clip.none,
         children: [
           // Screen content
           Positioned.fill(
@@ -435,10 +433,9 @@ class _DeviceWrapperState extends State<DeviceWrapper>
                     data: MediaQueryData(
                       size: Size(config.width, config.height),
                       devicePixelRatio: config.devicePixelRatio,
-                      padding: EdgeInsets.only(
-                        top: config.showNotch ? 59.0 : 24.0,
-                        bottom: config.showHomeIndicator ? 34.0 : 0.0,
-                      ),
+                      // fix CupertinoNavigationBar safe padding is zero
+                      viewPadding: _currentDevice.safePadding,
+                      padding: _currentDevice.safePadding,
                     ),
                     child: widget.child,
                   ),
@@ -448,12 +445,22 @@ class _DeviceWrapperState extends State<DeviceWrapper>
           ),
 
           // Dynamic Island (for iPhone 17 Pro style)
-          if (config.showNotch && _currentMode == DeviceMode.mobile)
+          if (config.showNotch && _currentDevice.mode == DeviceMode.mobile)
             Positioned(
               top: config.borderWidth + 12,
               left: 0,
               right: 0,
               child: _buildDynamicIsland(config),
+            ),
+
+          // Status bar
+          if (config.showStatusBar && _currentDevice.mode != DeviceMode.desktop)
+            Positioned(
+              top: config.borderWidth +
+                  math.max((config.safePadding.top - 24) / 2, 0),
+              left: config.borderWidth,
+              right: config.borderWidth,
+              child: _buildStatusBar(config),
             ),
 
           // Home indicator
@@ -465,45 +472,21 @@ class _DeviceWrapperState extends State<DeviceWrapper>
               child: _buildHomeIndicator(config),
             ),
 
-          // Side buttons (volume, power)
-          _buildSideButtons(config),
-        ],
-      ),
-    );
-  }
-
-  /// Build screen only mode (without device frame)
-  Widget _buildScreenOnly(DeviceConfig config) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOutCubic,
-      width: config.width,
-      height: config.height,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: MediaQuery(
-          data: MediaQueryData(
-            size: Size(config.width, config.height),
-            devicePixelRatio: config.devicePixelRatio,
-            padding: const EdgeInsets.only(
-              top: 24.0,
-              bottom: 0.0,
+          // Traffic Light Buttons
+          if (config.showStatusBar && _currentDevice.mode == DeviceMode.desktop)
+            Positioned(
+              top: config.borderWidth +
+                  math.max((config.safePadding.top - 24) / 2, 0),
+              left: config.borderWidth + 10,
+              child: _buildTrafficLightButtons(config),
             ),
-          ),
-          child: widget.child,
-        ),
+
+          // Side buttons (volume, power)
+          if (_currentDevice.borderWidth > 0 &&
+              (_currentDevice.mode == DeviceMode.mobile ||
+                  _currentDevice.mode == DeviceMode.tablet))
+            ..._buildSideButtons(config),
+        ],
       ),
     );
   }
@@ -513,7 +496,7 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     return Center(
       child: Container(
         width: 126,
-        height: 37,
+        height: 38,
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(20),
@@ -552,115 +535,170 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     );
   }
 
+  Widget _buildStatusBar(DeviceConfig config) {
+    final brightness = widget.brightness ?? Theme.of(context).brightness;
+    return Container(
+      height: 24,
+      width: config.width,
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          centerSlice: const Rect.fromLTWH(80, 0, 10, 24),
+          image: AssetImage(
+            'assets/images/iphone_status_bar_${brightness == Brightness.light ? 'black' : 'white'}.png',
+            package: 'device_wrapper',
+          ),
+          fit: BoxFit.fill,
+          scale: 3,
+        ),
+      ),
+    );
+  }
+
   Widget _buildHomeIndicator(DeviceConfig config) {
+    final brightness = widget.brightness ?? Theme.of(context).brightness;
     return Center(
       child: Container(
-        width: _currentMode == DeviceMode.mobile ? 134 : 180,
+        width: _currentDevice.mode == DeviceMode.mobile ? 134 : 180,
         height: 5,
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.3),
+          color: (brightness == Brightness.light ? Colors.black : Colors.white)
+              .withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(3),
         ),
       ),
     );
   }
 
-  Widget _buildSideButtons(DeviceConfig config) {
+  List<Widget> _buildSideButtons(DeviceConfig config) {
     const buttonColor = Color(0xFF2a2a2e);
 
-    return Stack(
-      children: [
-        // Power button (right side) - iPhone style
-        Positioned(
-          right: -2,
-          top: config.height * 0.22,
-          child: Container(
-            width: 3,
-            height: 80,
-            decoration: BoxDecoration(
-              color: buttonColor,
-              borderRadius: const BorderRadius.horizontal(
-                right: Radius.circular(2),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 2,
-                  offset: const Offset(1, 0),
-                ),
-              ],
+    return [
+      // Power button (right side) - iPhone style
+      Positioned(
+        right: -2,
+        top: config.height * 0.22,
+        child: Container(
+          width: 3,
+          height: 80,
+          decoration: BoxDecoration(
+            color: buttonColor,
+            borderRadius: const BorderRadius.horizontal(
+              right: Radius.circular(2),
             ),
-          ),
-        ),
-        // Action button (left side, top) - iPhone 15+ style
-        Positioned(
-          left: -2,
-          top: config.height * 0.15,
-          child: Container(
-            width: 3,
-            height: 32,
-            decoration: BoxDecoration(
-              color: buttonColor,
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(2),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 2,
-                  offset: const Offset(-1, 0),
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Volume buttons (left side)
-        Positioned(
-          left: -2,
-          top: config.height * 0.22,
-          child: Column(
-            children: [
-              // Volume Up
-              Container(
-                width: 3,
-                height: 45,
-                decoration: BoxDecoration(
-                  color: buttonColor,
-                  borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(2),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 2,
-                      offset: const Offset(-1, 0),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Volume Down
-              Container(
-                width: 3,
-                height: 45,
-                decoration: BoxDecoration(
-                  color: buttonColor,
-                  borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(2),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 2,
-                      offset: const Offset(-1, 0),
-                    ),
-                  ],
-                ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 2,
+                offset: const Offset(1, 0),
               ),
             ],
           ),
         ),
-      ],
+      ),
+      // Action button (left side, top) - iPhone 15+ style
+      Positioned(
+        left: -2,
+        top: config.height * 0.15,
+        child: Container(
+          width: 3,
+          height: 32,
+          decoration: BoxDecoration(
+            color: buttonColor,
+            borderRadius: const BorderRadius.horizontal(
+              left: Radius.circular(2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 2,
+                offset: const Offset(-1, 0),
+              ),
+            ],
+          ),
+        ),
+      ),
+      // Volume buttons (left side)
+      Positioned(
+        left: -2,
+        top: config.height * 0.22,
+        child: Column(
+          children: [
+            // Volume Up
+            Container(
+              width: 3,
+              height: 45,
+              decoration: BoxDecoration(
+                color: buttonColor,
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(2),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 2,
+                    offset: const Offset(-1, 0),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Volume Down
+            Container(
+              width: 3,
+              height: 45,
+              decoration: BoxDecoration(
+                color: buttonColor,
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(2),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 2,
+                    offset: const Offset(-1, 0),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildTrafficLightButtons(DeviceConfig config) {
+    return Container(
+      alignment: Alignment.centerLeft,
+      height: 24,
+      child: Row(
+        spacing: 8,
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFF605C),
+              shape: BoxShape.circle,
+            ),
+            width: 10,
+            height: 10,
+          ),
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFBD44),
+              shape: BoxShape.circle,
+            ),
+            width: 10,
+            height: 10,
+          ),
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF00CA4E),
+              shape: BoxShape.circle,
+            ),
+            width: 10,
+            height: 10,
+          )
+        ],
+      ),
     );
   }
 
@@ -676,22 +714,20 @@ class _DeviceWrapperState extends State<DeviceWrapper>
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildModeButton(DeviceMode.mobile, Icons.phone_android),
-          _buildModeButton(DeviceMode.tablet, Icons.tablet_android),
-          _buildModeButton(DeviceMode.screenOnly, Icons.crop_free),
-        ],
+        children: widget.deviceList
+            .map((device) => _buildModeButton(device))
+            .toList(),
       ),
     );
   }
 
-  Widget _buildModeButton(DeviceMode mode, IconData icon) {
-    final isSelected = _currentMode == mode;
+  Widget _buildModeButton(DeviceConfig device) {
+    final isSelected = _currentDevice == device;
 
     return GestureDetector(
       onTap: () {
-        if (_currentMode != mode) {
-          _setMode(mode);
+        if (_currentDevice != device) {
+          _setDevice(device);
         }
       },
       child: AnimatedContainer(
@@ -707,20 +743,15 @@ class _DeviceWrapperState extends State<DeviceWrapper>
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              icon,
-              color: isSelected ? Colors.white : Colors.white60,
+              device.icon,
+              color: isSelected
+                  ? widget.textStyle.color
+                  : widget.textStyle.color?.withValues(alpha: 0.6),
               size: 20,
             ),
             if (isSelected) ...[
               const SizedBox(width: 8),
-              Text(
-                mode.displayName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              Text(device.name),
             ],
           ],
         ),
@@ -737,7 +768,7 @@ class _DeviceWrapperState extends State<DeviceWrapper>
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
-          '${config.width.toInt()} × ${config.height.toInt()} • ${_currentMode.displayName}',
+          '${config.width.toInt()} × ${config.height.toInt()} • ${_currentDevice.name}',
           style: const TextStyle(
             color: Color(0xB3FFFFFF),
             fontSize: 12,

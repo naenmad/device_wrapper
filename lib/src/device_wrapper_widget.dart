@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart'
     show kIsWeb, TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
@@ -432,16 +434,8 @@ class _DeviceWrapperState extends State<DeviceWrapper>
                       size: Size(config.width, config.height),
                       devicePixelRatio: config.devicePixelRatio,
                       // fix CupertinoNavigationBar safe padding is zero
-                      viewPadding: _currentDevice.safePadding ??
-                          EdgeInsets.only(
-                            top: config.showNotch ? 59.0 : 24.0,
-                            bottom: config.showHomeIndicator ? 34.0 : 0.0,
-                          ),
-                      padding: _currentDevice.safePadding ??
-                          EdgeInsets.only(
-                            top: config.showNotch ? 59.0 : 24.0,
-                            bottom: config.showHomeIndicator ? 34.0 : 0.0,
-                          ),
+                      viewPadding: _currentDevice.safePadding,
+                      padding: _currentDevice.safePadding,
                     ),
                     child: widget.child,
                   ),
@@ -459,6 +453,16 @@ class _DeviceWrapperState extends State<DeviceWrapper>
               child: _buildDynamicIsland(config),
             ),
 
+          // Status bar
+          if (config.showStatusBar && _currentDevice.mode != DeviceMode.desktop)
+            Positioned(
+              top: config.borderWidth +
+                  math.max((config.safePadding.top - 24) / 2, 0),
+              left: config.borderWidth,
+              right: config.borderWidth,
+              child: _buildStatusBar(config),
+            ),
+
           // Home indicator
           if (config.showHomeIndicator)
             Positioned(
@@ -469,10 +473,11 @@ class _DeviceWrapperState extends State<DeviceWrapper>
             ),
 
           // Traffic Light Buttons
-          if (_currentDevice.mode == DeviceMode.desktop)
+          if (config.showStatusBar && _currentDevice.mode == DeviceMode.desktop)
             Positioned(
+              top: config.borderWidth +
+                  math.max((config.safePadding.top - 24) / 2, 0),
               left: config.borderWidth + 10,
-              top: config.borderWidth + 10,
               child: _buildTrafficLightButtons(config),
             ),
 
@@ -491,7 +496,7 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     return Center(
       child: Container(
         width: 126,
-        height: 37,
+        height: 38,
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(20),
@@ -525,6 +530,25 @@ class _DeviceWrapperState extends State<DeviceWrapper>
             ),
             const SizedBox(width: 8),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBar(DeviceConfig config) {
+    final brightness = widget.brightness ?? Theme.of(context).brightness;
+    return Container(
+      height: 24,
+      width: config.width,
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          centerSlice: const Rect.fromLTWH(80, 0, 10, 24),
+          image: AssetImage(
+            'assets/images/iphone_status_bar_${brightness == Brightness.light ? 'black' : 'white'}.png',
+            package: 'device_wrapper',
+          ),
+          fit: BoxFit.fill,
+          scale: 3,
         ),
       ),
     );
@@ -643,34 +667,38 @@ class _DeviceWrapperState extends State<DeviceWrapper>
   }
 
   Widget _buildTrafficLightButtons(DeviceConfig config) {
-    return Row(
-      spacing: 8,
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFFFF605C),
-            shape: BoxShape.circle,
+    return Container(
+      alignment: Alignment.centerLeft,
+      height: 24,
+      child: Row(
+        spacing: 8,
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFF605C),
+              shape: BoxShape.circle,
+            ),
+            width: 10,
+            height: 10,
           ),
-          width: 10,
-          height: 10,
-        ),
-        Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFBD44),
-            shape: BoxShape.circle,
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFBD44),
+              shape: BoxShape.circle,
+            ),
+            width: 10,
+            height: 10,
           ),
-          width: 10,
-          height: 10,
-        ),
-        Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF00CA4E),
-            shape: BoxShape.circle,
-          ),
-          width: 10,
-          height: 10,
-        )
-      ],
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF00CA4E),
+              shape: BoxShape.circle,
+            ),
+            width: 10,
+            height: 10,
+          )
+        ],
+      ),
     );
   }
 

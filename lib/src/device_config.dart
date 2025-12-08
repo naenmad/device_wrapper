@@ -44,15 +44,25 @@ class DeviceConfig {
   /// Whether to show the home indicator
   final bool showHomeIndicator;
 
+  /// Whether to show the status bar
+  final bool showStatusBar;
+
   /// Device safe padding
-  final EdgeInsets? safePadding;
+  final EdgeInsets? _safePadding;
+
+  EdgeInsets get safePadding =>
+      _safePadding ??
+      EdgeInsets.only(
+        top: showNotch ? 59.0 : 24.0,
+        bottom: showHomeIndicator ? 34.0 : 0.0,
+      );
 
   const DeviceConfig({
     required this.name,
     required this.width,
     required this.height,
     required this.icon,
-    this.safePadding,
+    EdgeInsets? safePadding,
     this.mode = DeviceMode.mobile,
     this.devicePixelRatio = 3.0,
     this.borderRadius = 55.0,
@@ -76,7 +86,8 @@ class DeviceConfig {
     ],
     this.showNotch = true,
     this.showHomeIndicator = true,
-  });
+    this.showStatusBar = true,
+  }) : _safePadding = safePadding;
 
   /// All DeviceConfig
   static const List<DeviceConfig> deviceList = [
@@ -101,6 +112,7 @@ class DeviceConfig {
     borderWidth: 12.0,
     showNotch: true,
     showHomeIndicator: true,
+    showStatusBar: true,
   );
 
   /// iPad Pro 11" / iPad Air configuration
@@ -118,6 +130,7 @@ class DeviceConfig {
     borderWidth: 14.0,
     showNotch: false,
     showHomeIndicator: true,
+    showStatusBar: true,
   );
 
   /// Screen only configuration (no device frame, just screen)
@@ -126,13 +139,14 @@ class DeviceConfig {
     name: 'ScreenOnly',
     icon: Icons.crop_free,
     mode: DeviceMode.mobile,
-    width: 393,
+    width: 394,
     height: 852,
     devicePixelRatio: 3.0,
     borderRadius: 0.0,
     borderWidth: 0.0,
     showNotch: false,
     showHomeIndicator: false,
+    showStatusBar: false,
   );
 
   static const DeviceConfig desktop = DeviceConfig(
@@ -146,6 +160,7 @@ class DeviceConfig {
     borderWidth: 14.0,
     showNotch: false,
     showHomeIndicator: false,
+    showStatusBar: true,
   );
 
   /// Create a copy with modified properties
@@ -163,6 +178,7 @@ class DeviceConfig {
     List<BoxShadow>? shadows,
     bool? showNotch,
     bool? showHomeIndicator,
+    bool? showStatusBar,
     EdgeInsets? safePadding,
     Color? gridColor,
   }) {
@@ -180,6 +196,7 @@ class DeviceConfig {
       shadows: shadows ?? this.shadows,
       showNotch: showNotch ?? this.showNotch,
       showHomeIndicator: showHomeIndicator ?? this.showHomeIndicator,
+      showStatusBar: showStatusBar ?? this.showStatusBar,
       safePadding: safePadding ?? this.safePadding,
       gridColor: gridColor ?? this.gridColor,
     );

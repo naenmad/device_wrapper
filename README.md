@@ -3,14 +3,15 @@
 [![pub package](https://img.shields.io/pub/v/device_wrapper.svg)](https://pub.dev/packages/device_wrapper)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Flutter package to wrap pages with realistic device frames (iPhone 16 Pro, iPad Pro 11") for web/desktop preview. Features auto-scaling to fit any screen size, Dynamic Island, mobile device toggle, and smooth mode switching animations.
+A Flutter package to wrap pages with realistic device frames (iPhone 16 Pro, Samsung Galaxy S25, iPad Pro 11", Samsung Galaxy Tab S9) for web/desktop preview. Features auto-scaling to fit any screen size, Dynamic Island, punch-hole camera, and smooth mode switching animations.
 
 ## Features
 
-- 📱 **Realistic Device Frames**: iPhone 16 Pro (393×852) and iPad Pro 11" (834×1194) with accurate dimensions
+- 📱 **5 Device Options**: iPhone, Samsung Galaxy S25, iPad, Galaxy Tab, and Screen Only mode
 - 🏝️ **Dynamic Island**: Modern iPhone-style Dynamic Island with camera lens effect
+- ⚫ **Punch-Hole Camera**: Samsung-style centered punch-hole camera for Galaxy devices
 - 📐 **Auto-Scaling**: Automatically scales device to fit within browser/window size
-- 🔄 **Mode Toggle**: Built-in animated toggle button to switch between mobile, tablet, and screen-only modes
+- 🔄 **Mode Toggle**: Built-in animated toggle to switch between all device modes
 - 📲 **Mobile Device Support**: Smart detection with optional toggle to show/hide device frame on real devices
 - 🖥️ **Screen Only Mode**: Display just the screen without device frame for cleaner previews
 - 🎨 **Titanium Frame**: Gradient frame design mimicking real device bezels
@@ -23,7 +24,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  device_wrapper: ^1.0.6
+  device_wrapper: ^1.1.0
 ```
 
 Then run:
@@ -52,7 +53,7 @@ class MyApp extends StatelessWidget {
     // Only use DeviceWrapper on web
     if (kIsWeb) {
       return DeviceWrapper(
-        initialMode: DeviceMode.mobile,
+        initialMode: DeviceMode.iphone,
         showModeToggle: true,
         child: materialApp,
       );
@@ -67,7 +68,7 @@ class MyApp extends StatelessWidget {
 
 ```dart
 DeviceWrapper(
-  initialMode: DeviceMode.mobile,
+  initialMode: DeviceMode.iphone,
   showModeToggle: true,
   onModeChanged: (mode) {
     print('Device mode changed to: ${mode.displayName}');
@@ -80,7 +81,7 @@ DeviceWrapper(
 
 ```dart
 DeviceWrapper(
-  initialMode: DeviceMode.mobile,
+  initialMode: DeviceMode.iphone,
   mobileConfig: DeviceConfig(
     width: 375,
     height: 812,
@@ -151,7 +152,7 @@ DeviceWrapper(
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `child` | `Widget` | required | The widget to wrap inside the device frame |
-| `initialMode` | `DeviceMode` | `DeviceMode.mobile` | Initial device mode |
+| `initialMode` | `DeviceMode` | `DeviceMode.iphone` | Initial device mode |
 | `showModeToggle` | `bool` | `true` | Whether to show the mode toggle button |
 | `mobileConfig` | `DeviceConfig?` | `null` | Custom configuration for mobile mode |
 | `tabletConfig` | `DeviceConfig?` | `null` | Custom configuration for tablet mode |
@@ -164,9 +165,11 @@ DeviceWrapper(
 
 ```dart
 enum DeviceMode {
-  mobile,      // iPhone 16 Pro (393×852)
-  tablet,      // iPad Pro 11" (834×1194)
-  screenOnly,  // Screen only without device frame
+  iphone,        // iPhone 16 Pro (393×852)
+  samsungPhone,  // Samsung Galaxy S25 (384×832)
+  ipad,          // iPad Pro 11" (834×1194)
+  samsungTablet, // Samsung Galaxy Tab S9 (800×1280)
+  screenOnly,    // Screen only without device frame
 }
 ```
 
@@ -189,25 +192,39 @@ enum MobileDeviceBehavior {
 | `borderRadius` | `double` | `55.0` / `24.0` | Border radius for the device frame |
 | `borderWidth` | `double` | `5.0` / `6.0` | Border width for the device frame (thin bezel) |
 | `borderColor` | `Color` | `Color(0xFF1C1C1E)` | Titanium frame color |
-| `backgroundColor` | `Color` | `Color(0xFF1A1A2E)` | Background color |
+| `backgroundColor` | `Color` | `Color(0xFF000000)` | Background color (black) |
 | `shadows` | `List<BoxShadow>` | default shadows | Shadow configuration |
-| `showNotch` | `bool` | `true` / `false` | Whether to show Dynamic Island (mobile only) |
+| `showNotch` | `bool` | `true` / `false` | Whether to show Dynamic Island/punch-hole camera |
 | `showHomeIndicator` | `bool` | `true` | Whether to show the home indicator |
+| `isSamsung` | `bool` | `false` | Whether this is a Samsung device (affects camera style) |
 
 ## Default Device Configurations
 
-### Mobile - iPhone 16 Pro (393×852)
+### iPhone 16 Pro (393×852)
 - Physical resolution: 1179×2556 @ 3x scale
 - Border radius: 55px (rounded corners)
 - Border width: 12px (titanium bezel)
 - Dynamic Island with camera lens effect
 - Home indicator bar
 
-### Tablet - iPad Pro 11" (834×1194)
+### Samsung Galaxy S25 (384×832)
+- Physical resolution: 1080×2340 @ 2.8125x scale
+- Border radius: 45px
+- Border width: 10px
+- Punch-hole centered camera
+- No home indicator (gesture navigation)
+
+### iPad Pro 11" (834×1194)
 - Physical resolution: 1668×2388 @ 2x scale
 - Border radius: 18px
 - Border width: 14px
 - Home indicator only (no notch)
+
+### Samsung Galaxy Tab S9 (800×1280)
+- Physical resolution: 1600×2560 @ 2x scale
+- Border radius: 20px
+- Border width: 12px
+- No notch, no home indicator
 
 ## Auto-Scaling Behavior
 
@@ -215,9 +232,9 @@ The device frame automatically scales to fit within the available browser/window
 
 - **Scales down** when window is smaller than device dimensions
 - **Never scales up** beyond original size (max scale = 1.0)
-- **Maintains aspect ratio** - device is never distorted
+- **Maintains aspect ratio** - device is never distorted or squished
 - **Responsive** - automatically adjusts when resizing browser window
-- **Minimum scale**: 0.3 (to ensure content remains visible)
+- **Minimum scale**: 0.1 (to ensure content remains visible on very small screens)
 
 ## Example
 

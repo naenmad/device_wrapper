@@ -63,7 +63,7 @@ class DeviceWrapper extends StatefulWidget {
   const DeviceWrapper({
     super.key,
     required this.child,
-    this.initialMode = DeviceMode.mobile,
+    this.initialMode = DeviceMode.iphone,
     this.showModeToggle = true,
     this.mobileConfig,
     this.tabletConfig,
@@ -83,6 +83,8 @@ class _DeviceWrapperState extends State<DeviceWrapper>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   bool _showDeviceFrame = true;
+  bool _isScreenOnly = false;
+  DeviceMode _lastDeviceMode = DeviceMode.iphone;
 
   /// Check if running on a mobile device (iOS or Android, not web)
   bool get _isOnMobileDevice {
@@ -130,11 +132,16 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     super.dispose();
   }
 
-  void _setMode(DeviceMode mode) async {
+  void _toggleScreenOnly() async {
     await _animationController.forward();
 
     setState(() {
-      _currentMode = mode;
+      _isScreenOnly = !_isScreenOnly;
+      if (_isScreenOnly) {
+        _currentMode = DeviceMode.screenOnly;
+      } else {
+        _currentMode = _lastDeviceMode;
+      }
     });
 
     widget.onModeChanged?.call(_currentMode);
@@ -143,13 +150,30 @@ class _DeviceWrapperState extends State<DeviceWrapper>
   }
 
   DeviceConfig get _currentConfig {
-    switch (_currentMode) {
-      case DeviceMode.mobile:
-        return widget.mobileConfig ?? DeviceConfig.mobile;
-      case DeviceMode.tablet:
-        return widget.tabletConfig ?? DeviceConfig.tablet;
+    // For screen only mode, use the last device's config
+    if (_isScreenOnly) {
+      return _getConfigForMode(_lastDeviceMode).copyWith(
+        borderRadius: 12.0,
+        borderWidth: 0.0,
+        showNotch: false,
+        showHomeIndicator: false,
+      );
+    }
+    return _getConfigForMode(_currentMode);
+  }
+
+  DeviceConfig _getConfigForMode(DeviceMode mode) {
+    switch (mode) {
+      case DeviceMode.iphone:
+        return widget.mobileConfig ?? DeviceConfig.iphone;
+      case DeviceMode.samsungPhone:
+        return DeviceConfig.samsungPhone;
+      case DeviceMode.ipad:
+        return widget.tabletConfig ?? DeviceConfig.ipad;
+      case DeviceMode.samsungTablet:
+        return DeviceConfig.samsungTablet;
       case DeviceMode.screenOnly:
-        return widget.mobileConfig ?? DeviceConfig.screenOnly;
+        return widget.mobileConfig ?? DeviceConfig.iphone;
     }
   }
 
@@ -178,81 +202,83 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     final config = _currentConfig;
     final bgColor = widget.backgroundColor ?? config.backgroundColor;
 
-    // Use Directionality to provide text direction context
+    // Device dimensions
+    final deviceTotalHeight = config.height + (config.borderWidth * 2);
+    final deviceTotalWidth = config.width + (config.borderWidth * 2);
+    final deviceAspectRatio = deviceTotalWidth / deviceTotalHeight;
+
+    // Use Directionality and Material to provide required context
     // since we're wrapping MaterialApp from outside
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Calculate scale factor to fit device within screen
-          // Leave padding for toggle button (top) and device info (bottom)
-          final availableHeight =
-              constraints.maxHeight - 100; // 50 top + 50 bottom padding
-          final availableWidth =
-              constraints.maxWidth - 80; // 40 left + 40 right padding
+      child: Material(
+        color: bgColor,
+        child: Stack(
+          children: [
+            // Background pattern
+            _buildBackgroundPattern(bgColor),
 
-          final deviceTotalHeight = config.height + (config.borderWidth * 2);
-          final deviceTotalWidth = config.width + (config.borderWidth * 2);
-
-          // Calculate scale to fit within available space
-          final heightScale = availableHeight / deviceTotalHeight;
-          final widthScale = availableWidth / deviceTotalWidth;
-
-          // Use the smaller scale to ensure device fits both dimensions
-          // But don't scale up beyond 1.0
-          final scale = (heightScale < widthScale ? heightScale : widthScale)
-              .clamp(0.3, 1.0);
-
-          return Container(
-            color: bgColor,
-            child: Stack(
-              children: [
-                // Background pattern
-                _buildBackgroundPattern(bgColor),
-
-                // Device frame centered with auto-scaling
-                Center(
+            // Device frame centered with fixed aspect ratio
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  top: 70, // Space for toggle
+                  bottom: 60, // Space for info label
+                  left: 40,
+                  right: 40,
+                ),
+                child: Center(
                   child: AnimatedBuilder(
                     animation: _scaleAnimation,
                     builder: (context, child) {
                       return Transform.scale(
-                        scale: _scaleAnimation.value * scale,
+                        scale: _scaleAnimation.value,
                         child: child,
                       );
                     },
-                    child: _buildDeviceFrame(config),
+                    // AspectRatio ensures the device never gets distorted
+                    child: AspectRatio(
+                      aspectRatio: deviceAspectRatio,
+                      child: FittedBox(
+                        fit: BoxFit.contain,
+                        child: SizedBox(
+                          width: deviceTotalWidth,
+                          height: deviceTotalHeight,
+                          child: _buildDeviceFrame(config),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-
-                // Mode toggle button
-                if (widget.showModeToggle)
-                  Positioned(
-                    top: 20,
-                    right: 20,
-                    child: _buildModeToggle(),
-                  ),
-
-                // Hide device frame button (only on mobile with showToggle behavior)
-                if (_isOnMobileDevice &&
-                    widget.mobileDeviceBehavior ==
-                        MobileDeviceBehavior.showToggle)
-                  Positioned(
-                    top: 20,
-                    left: 20,
-                    child: _buildHideFrameButton(),
-                  ),
-
-                // Device info label
-                Positioned(
-                  bottom: 20,
-                  left: 0,
-                  right: 0,
-                  child: _buildDeviceInfoLabel(config),
-                ),
-              ],
+              ),
             ),
-          );
-        },
+
+            // Mode toggle button
+            if (widget.showModeToggle)
+              Positioned(
+                top: 20,
+                right: 20,
+                child: _buildModeToggle(),
+              ),
+
+            // Hide device frame button (only on mobile with showToggle behavior)
+            if (_isOnMobileDevice &&
+                widget.mobileDeviceBehavior == MobileDeviceBehavior.showToggle)
+              Positioned(
+                top: 20,
+                left: 20,
+                child: _buildHideFrameButton(),
+              ),
+
+            // Device info label
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: _buildDeviceInfoLabel(config),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -447,13 +473,15 @@ class _DeviceWrapperState extends State<DeviceWrapper>
             ),
           ),
 
-          // Dynamic Island (for iPhone 17 Pro style)
-          if (config.showNotch && _currentMode == DeviceMode.mobile)
+          // Dynamic Island / Punch hole camera
+          if (config.showNotch && _currentMode.isPhone)
             Positioned(
               top: config.borderWidth + 12,
               left: 0,
               right: 0,
-              child: _buildDynamicIsland(config),
+              child: config.isSamsung
+                  ? _buildPunchHoleCamera(config)
+                  : _buildDynamicIsland(config),
             ),
 
           // Home indicator
@@ -552,10 +580,38 @@ class _DeviceWrapperState extends State<DeviceWrapper>
     );
   }
 
+  /// Punch hole camera style for Samsung phones
+  Widget _buildPunchHoleCamera(DeviceConfig config) {
+    return Center(
+      child: Container(
+        width: 14,
+        height: 14,
+        decoration: BoxDecoration(
+          color: const Color(0xFF0a0a0a),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color(0xFF2a2a2e),
+            width: 1.5,
+          ),
+        ),
+        child: Center(
+          child: Container(
+            width: 5,
+            height: 5,
+            decoration: const BoxDecoration(
+              color: Color(0xFF1a1a3e),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildHomeIndicator(DeviceConfig config) {
     return Center(
       child: Container(
-        width: _currentMode == DeviceMode.mobile ? 134 : 180,
+        width: _currentMode.isPhone ? 134 : 180,
         height: 5,
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.3),
@@ -665,70 +721,110 @@ class _DeviceWrapperState extends State<DeviceWrapper>
   }
 
   Widget _buildModeToggle() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-          width: 1,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Device selector
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildModeButton(DeviceMode.iphone),
+              _buildModeButton(DeviceMode.samsungPhone),
+              _buildModeButton(DeviceMode.ipad),
+              _buildModeButton(DeviceMode.samsungTablet),
+            ],
+          ),
         ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildModeButton(DeviceMode.mobile, Icons.phone_android),
-          _buildModeButton(DeviceMode.tablet, Icons.tablet_android),
-          _buildModeButton(DeviceMode.screenOnly, Icons.crop_free),
-        ],
+        const SizedBox(width: 8),
+        // Screen only toggle
+        _buildScreenOnlyToggle(),
+      ],
+    );
+  }
+
+  Widget _buildScreenOnlyToggle() {
+    return GestureDetector(
+      onTap: _toggleScreenOnly,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: _isScreenOnly
+              ? Colors.white.withValues(alpha: 0.25)
+              : Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(
+            color: _isScreenOnly
+                ? Colors.white.withValues(alpha: 0.4)
+                : Colors.white.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          _isScreenOnly ? 'Screen' : 'Device',
+          style: TextStyle(
+            color: _isScreenOnly ? Colors.white : Colors.white60,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildModeButton(DeviceMode mode, IconData icon) {
-    final isSelected = _currentMode == mode;
+  Widget _buildModeButton(DeviceMode mode) {
+    // Check if this mode is selected (considering screen only state)
+    final isSelected =
+        _isScreenOnly ? _lastDeviceMode == mode : _currentMode == mode;
 
     return GestureDetector(
       onTap: () {
-        if (_currentMode != mode) {
-          _setMode(mode);
+        if (_lastDeviceMode != mode || _isScreenOnly) {
+          setState(() {
+            _lastDeviceMode = mode;
+            if (!_isScreenOnly) {
+              _currentMode = mode;
+            }
+          });
+          widget.onModeChanged?.call(_currentMode);
         }
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
               ? Colors.white.withValues(alpha: 0.2)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(25),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : Colors.white60,
-              size: 20,
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 8),
-              Text(
-                mode.displayName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ],
+        child: Text(
+          mode.shortName,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white60,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
   }
 
   Widget _buildDeviceInfoLabel(DeviceConfig config) {
+    // Show the actual device name even in screen only mode
+    final deviceName = _isScreenOnly
+        ? '${_lastDeviceMode.displayName} (Screen)'
+        : _currentMode.displayName;
+
     return Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -737,7 +833,7 @@ class _DeviceWrapperState extends State<DeviceWrapper>
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
-          '${config.width.toInt()} × ${config.height.toInt()} • ${_currentMode.displayName}',
+          '${config.width.toInt()} × ${config.height.toInt()} • $deviceName',
           style: const TextStyle(
             color: Color(0xB3FFFFFF),
             fontSize: 12,

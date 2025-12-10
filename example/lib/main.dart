@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: DeviceWrapper(
-        initialMode: DeviceMode.mobile,
+        initialMode: DeviceMode.iphone,
         showModeToggle: true,
         onModeChanged: (mode) {
           debugPrint('Device mode changed to: ${mode.displayName}');
@@ -82,7 +82,7 @@ class DemoHomePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Toggle between Mobile and Tablet mode\nusing the buttons at the top right',
+                    'Choose device: iPhone, Galaxy S25,\niPad, Galaxy Tab, or Screen Only',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,

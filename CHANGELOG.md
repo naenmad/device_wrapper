@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-12-10
+
+### Added
+- **Screen Only for All Devices**: Screen Only mode now works with any selected device
+  - Toggle between Device frame and Screen Only mode using the new toggle button
+  - Screen Only maintains the selected device's dimensions (iPhone, Galaxy S25, iPad, or Galaxy Tab)
+- **Separate Screen Only Toggle**: New dedicated toggle button separated from device selector
+  - Shows "Device" or "Screen" label to indicate current mode
+  - Device selector remains active even in Screen Only mode
+
+### Fixed
+- **Browser Zoom Compensation**: Device size now stays consistent regardless of browser zoom level (Ctrl+/Ctrl-)
+  - Device frame maintains the same visual size when zooming in or out
+  - Uses devicePixelRatio compensation to counteract browser zoom
+
+### Changed
+- **UI Toggle Redesign**: Split into two parts
+  - Device selector (iPhone, Galaxy, iPad, Tab) - 4 buttons
+  - Screen/Device toggle - separate button on the right
+- Device info label now shows device name even in Screen Only mode (e.g., "iPhone 16 Pro (Screen)")
+
+## [1.1.0] - 2025-12-08
+
+### Added
+- **Samsung Galaxy S25**: New device option with punch-hole camera style
+  - Resolution: 384×832 logical pixels @ 2.8125x scale
+  - Aspect ratio: ~1:2.17 (19.5:9)
+- **Samsung Galaxy Tab S9**: New tablet device option
+  - Resolution: 800×1280 logical pixels @ 2x scale
+  - Aspect ratio: ~1:1.6 (10:16)
+- Punch-hole camera design for Samsung phones
+- `isSamsung` property in DeviceConfig for device-specific styling
+- `isPhone` and `isTablet` getters in DeviceMode for easier device type checking
+- `shortName` getter in DeviceMode for compact toggle display
+
+### Changed
+- **DeviceMode enum**: Renamed values for clarity
+  - `mobile` → `iphone` (iPhone 16 Pro)
+  - `tablet` → `ipad` (iPad Pro 11")
+  - Added `samsungPhone` (Galaxy S25)
+  - Added `samsungTablet` (Galaxy Tab S9)
+- **Mode Toggle UI**: Updated to show 5 device options with distinct icons
+  - iPhone (phone_iphone icon)
+  - Galaxy S25 (phone_android icon)
+  - iPad (tablet_mac icon)
+  - Galaxy Tab (tablet_android icon)
+  - Screen Only (crop_free icon)
+- **Improved Aspect Ratio**: Fixed scaling bug where device appeared squished/gepeng on some laptops at 100% zoom
+  - Now uses fixed SizedBox to enforce exact device dimensions
+  - Scale calculation ensures proper aspect ratio is maintained
+
+### Fixed
+- **Aspect Ratio Bug**: Device frame now maintains correct proportions regardless of browser/window zoom level
+- Reduced minimum scale from 0.3 to 0.1 for better fit on smaller screens
+
 ## [1.0.6] - 2025-12-07
 
 ### Added

@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:device_wrapper/device_wrapper.dart';
 
@@ -20,8 +22,13 @@ class MyApp extends StatelessWidget {
       home: DeviceWrapper(
         initialMode: DeviceMode.iphone,
         showModeToggle: true,
+        initialTheme: WrapperTheme.light,
+        initialOrientation: DeviceOrientation.portrait,
         onModeChanged: (mode) {
           debugPrint('Device mode changed to: ${mode.displayName}');
+        },
+        onScreenshot: (ui.Image image) {
+          debugPrint('Screenshot taken: ${image.width}x${image.height}');
         },
         child: const DemoHomePage(),
       ),
@@ -82,7 +89,7 @@ class DemoHomePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Choose device: iPhone, Galaxy S25,\niPad, Galaxy Tab, or Screen Only',
+                    'Devices: iPhone, Galaxy, iPad, Tab,\nMacBook, Surface, Apple Watch',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,

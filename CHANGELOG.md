@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-01-XX
+
+### Added
+- **Desktop Devices**: MacBook Pro 14" and Microsoft Surface Pro
+  - MacBook Pro: 1512×982 logical pixels with realistic laptop body frame
+  - Surface Pro: 1368×912 logical pixels with tablet/laptop hybrid design
+  - Both include hinge, keyboard base, and shadow effects
+- **Apple Watch**: Apple Watch Series 10 (45mm)
+  - 198×242 logical pixels with rounded square display
+  - Digital Crown and side button
+  - Watch bands (top and bottom)
+- **Status Bar UI**: iOS/Android style status bar with:
+  - Time display (HH:MM format)
+  - Signal strength bars
+  - WiFi icon
+  - Battery indicator
+- **Dark/Light Theme**: Toggle between light (white) and dark (gray) backgrounds
+  - Default theme is now light (white background)
+  - Theme affects all UI elements (buttons, borders, text)
+- **Orientation Change**: Portrait/landscape rotation for mobile devices
+  - Dynamic Island/punch-hole camera rotates with device
+  - Home indicator repositions correctly
+  - Desktop and watch devices maintain natural orientation
+- **Split Screen/Device Buttons**: Two separate buttons for clearer UX
+  - "Screen" button for screen-only mode
+  - "Device" button for device frame mode
+  - Active state clearly highlighted
+- **Screenshot Button**: Capture device frame as image
+  - Uses RepaintBoundary for high-quality capture (3x pixel ratio)
+  - Shows snackbar feedback when screenshot is taken
+  - Callback `onScreenshot` provides the captured ui.Image
+- **Wrapper Toggle**: Hide/show the entire device wrapper
+  - "Hide" button in toolbar to disable wrapper
+  - "Show Wrapper" floating button to re-enable
+- **Keyboard Shortcuts**: Full keyboard control for all features
+  - `Ctrl+Shift+S`: Take screenshot
+  - `Ctrl+Shift+R`: Rotate device (portrait/landscape)
+  - `Ctrl+Shift+T`: Toggle theme (light/dark)
+  - `Ctrl+Shift+D`: Toggle device/screen mode
+  - `Ctrl+Shift+W`: Toggle wrapper visibility
+  - `Ctrl+Shift+1-7`: Select device (1=iPhone through 7=Watch)
+- New enums: `WrapperTheme`, `DeviceOrientation`
+- New DeviceConfig properties: `isDesktop`, `isWatch`
+- New DeviceMode extensions: `isDesktop`, `isWatch`, `category`
+
+### Changed
+- **DeviceMode enum**: Added new values
+  - `macbook` (MacBook Pro 14")
+  - `surface` (Microsoft Surface Pro)
+  - `appleWatch` (Apple Watch Series 10)
+- **UI Redesign**: Device selector grouped by category (Phones, Tablets, Desktop, Watch)
+- **Bottom Toolbar**: New unified toolbar with all controls
+- Default background color changed from black to white (light theme)
+
 ## [1.1.1] - 2025-12-10
 
 ### Added

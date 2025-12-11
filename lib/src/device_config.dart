@@ -37,6 +37,12 @@ class DeviceConfig {
   /// Whether this is a Samsung device (for different notch style)
   final bool isSamsung;
 
+  /// Whether this is a desktop/laptop device
+  final bool isDesktop;
+
+  /// Whether this is a watch device
+  final bool isWatch;
+
   const DeviceConfig({
     required this.width,
     required this.height,
@@ -62,6 +68,8 @@ class DeviceConfig {
     this.showNotch = true,
     this.showHomeIndicator = true,
     this.isSamsung = false,
+    this.isDesktop = false,
+    this.isWatch = false,
   });
 
   /// iPhone 16 Pro configuration
@@ -124,6 +132,57 @@ class DeviceConfig {
     isSamsung: true,
   );
 
+  /// MacBook Pro 14" configuration
+  /// Physical resolution: 3024 x 1964 pixels @ 2x scale
+  /// Logical resolution (device points): 1512 x 982
+  /// Aspect ratio: ~1.54:1 (standard laptop)
+  static const DeviceConfig macbook = DeviceConfig(
+    width: 1512,
+    height: 982,
+    devicePixelRatio: 2.0,
+    borderRadius: 16.0,
+    borderWidth: 16.0,
+    borderColor: Color(0xFF2D2D2D),
+    showNotch: true,
+    showHomeIndicator: false,
+    isSamsung: false,
+    isDesktop: true,
+  );
+
+  /// Microsoft Surface Pro configuration
+  /// Physical resolution: 2736 x 1824 pixels @ 2x scale
+  /// Logical resolution (device points): 1368 x 912
+  /// Aspect ratio: 3:2
+  static const DeviceConfig surface = DeviceConfig(
+    width: 1368,
+    height: 912,
+    devicePixelRatio: 2.0,
+    borderRadius: 12.0,
+    borderWidth: 18.0,
+    borderColor: Color(0xFF1a1a1a),
+    showNotch: false,
+    showHomeIndicator: false,
+    isSamsung: false,
+    isDesktop: true,
+  );
+
+  /// Apple Watch Series 10 (45mm) configuration
+  /// Physical resolution: 396 x 484 pixels @ 2x scale
+  /// Logical resolution (device points): 198 x 242
+  /// Has rounded square display
+  static const DeviceConfig appleWatch = DeviceConfig(
+    width: 198,
+    height: 242,
+    devicePixelRatio: 2.0,
+    borderRadius: 52.0,
+    borderWidth: 8.0,
+    borderColor: Color(0xFF2D2D2D),
+    showNotch: false,
+    showHomeIndicator: false,
+    isSamsung: false,
+    isWatch: true,
+  );
+
   /// Screen only configuration (no device frame, just screen)
   /// Uses mobile dimensions by default
   static const DeviceConfig screenOnly = DeviceConfig(
@@ -148,6 +207,12 @@ class DeviceConfig {
         return ipad;
       case DeviceMode.samsungTablet:
         return samsungTablet;
+      case DeviceMode.macbook:
+        return macbook;
+      case DeviceMode.surface:
+        return surface;
+      case DeviceMode.appleWatch:
+        return appleWatch;
       case DeviceMode.screenOnly:
         return screenOnly;
     }
@@ -166,6 +231,8 @@ class DeviceConfig {
     bool? showNotch,
     bool? showHomeIndicator,
     bool? isSamsung,
+    bool? isDesktop,
+    bool? isWatch,
   }) {
     return DeviceConfig(
       width: width ?? this.width,
@@ -179,6 +246,8 @@ class DeviceConfig {
       showNotch: showNotch ?? this.showNotch,
       showHomeIndicator: showHomeIndicator ?? this.showHomeIndicator,
       isSamsung: isSamsung ?? this.isSamsung,
+      isDesktop: isDesktop ?? this.isDesktop,
+      isWatch: isWatch ?? this.isWatch,
     );
   }
 }

@@ -12,6 +12,15 @@ enum DeviceMode {
   /// Samsung Galaxy Tab S9 (800x1280)
   samsungTablet,
 
+  /// MacBook Pro 14" (1512x982 logical)
+  macbook,
+
+  /// Microsoft Surface Pro (1368x912 logical)
+  surface,
+
+  /// Apple Watch Series 10 (198x242)
+  appleWatch,
+
   /// Screen only mode - just the screen without device frame
   screenOnly,
 }
@@ -29,6 +38,12 @@ extension DeviceModeExtension on DeviceMode {
         return 'iPad Pro';
       case DeviceMode.samsungTablet:
         return 'Galaxy Tab';
+      case DeviceMode.macbook:
+        return 'MacBook Pro';
+      case DeviceMode.surface:
+        return 'Surface Pro';
+      case DeviceMode.appleWatch:
+        return 'Apple Watch';
       case DeviceMode.screenOnly:
         return 'Screen Only';
     }
@@ -45,6 +60,12 @@ extension DeviceModeExtension on DeviceMode {
         return 'iPad';
       case DeviceMode.samsungTablet:
         return 'Tab';
+      case DeviceMode.macbook:
+        return 'MacBook';
+      case DeviceMode.surface:
+        return 'Surface';
+      case DeviceMode.appleWatch:
+        return 'Watch';
       case DeviceMode.screenOnly:
         return 'Screen';
     }
@@ -60,6 +81,16 @@ extension DeviceModeExtension on DeviceMode {
     return this == DeviceMode.ipad || this == DeviceMode.samsungTablet;
   }
 
+  /// Check if this is a desktop/laptop mode
+  bool get isDesktop {
+    return this == DeviceMode.macbook || this == DeviceMode.surface;
+  }
+
+  /// Check if this is a watch mode
+  bool get isWatch {
+    return this == DeviceMode.appleWatch;
+  }
+
   /// Get the icon for the device mode
   String get iconName {
     switch (this) {
@@ -69,8 +100,22 @@ extension DeviceModeExtension on DeviceMode {
       case DeviceMode.ipad:
       case DeviceMode.samsungTablet:
         return 'tablet_android';
+      case DeviceMode.macbook:
+      case DeviceMode.surface:
+        return 'laptop';
+      case DeviceMode.appleWatch:
+        return 'watch';
       case DeviceMode.screenOnly:
         return 'crop_free';
     }
+  }
+
+  /// Get category name for grouping in UI
+  String get category {
+    if (isPhone) return 'Phone';
+    if (isTablet) return 'Tablet';
+    if (isDesktop) return 'Desktop';
+    if (isWatch) return 'Watch';
+    return 'Other';
   }
 }

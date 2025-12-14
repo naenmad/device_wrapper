@@ -1,6 +1,6 @@
 name: device_wrapper
 description: Wrap Flutter pages with realistic device frames (iPhone, Galaxy, iPad, MacBook, Surface, Apple Watch) for web/desktop preview with themes and screenshots.
-version: 1.2.0
+version: 1.2.1
 homepage: https://github.com/naenmad/device_wrapper
 repository: https://github.com/naenmad/device_wrapper
 issue_tracker: https://github.com/naenmad/device_wrapper/issues

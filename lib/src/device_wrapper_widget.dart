@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 import 'device_mode.dart';
 import 'device_config.dart';
 
@@ -351,11 +352,16 @@ class _DeviceWrapperState extends State<DeviceWrapper>
 
   Future<void> _takeScreenshot() async {
     try {
+      // Ensure the current frame is fully drawn before capturing
+      await SchedulerBinding.instance.endOfFrame;
+
       final boundary = _screenshotKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;
       if (boundary == null) return;
 
-      final image = await boundary.toImage(pixelRatio: 3.0);
+      final image = await boundary.toImage(
+        pixelRatio: ui.window.devicePixelRatio * 2.0,
+      );
       widget.onScreenshot?.call(image);
 
       // Show feedback
@@ -769,23 +775,35 @@ class _DeviceWrapperState extends State<DeviceWrapper>
           ),
 
           // Dynamic Island / Punch hole camera
-          if (config.showNotch && _currentMode.isPhone)
-            Positioned(
-              top: isLandscape ? null : config.borderWidth + 12,
-              left: isLandscape ? config.borderWidth + 12 : 0,
-              right: isLandscape ? null : 0,
-              bottom: isLandscape ? 0 : null,
-              child: isLandscape
-                  ? RotatedBox(
-                      quarterTurns: 1,
-                      child: config.isSamsung
-                          ? _buildPunchHoleCamera(config)
-                          : _buildDynamicIsland(config),
-                    )
-                  : config.isSamsung
-                      ? _buildPunchHoleCamera(config)
-                      : _buildDynamicIsland(config),
-            ),
+          if (config.showNotch && _currentMode.isPhone) ...[
+            // Base sizes for notch widgets (unrotated)
+            () {
+              final double notchBaseWidth = config.isSamsung ? 14.0 : 126.0;
+              final double notchBaseHeight = config.isSamsung ? 14.0 : 37.0;
+              final double notchWidth = isLandscape ? notchBaseHeight : notchBaseWidth;
+              final double notchHeight = isLandscape ? notchBaseWidth : notchBaseHeight;
+
+              return Positioned(
+                // Center vertically for landscape using computed rotated height
+                top: isLandscape ? (height - notchHeight) / 2 : config.borderWidth + 12,
+                left: isLandscape ? config.borderWidth + 12 : 0,
+                right: isLandscape ? null : 0,
+                // Only provide an explicit width when in landscape
+                width: isLandscape ? notchWidth : null,
+                height: notchHeight,
+                child: isLandscape
+                    ? RotatedBox(
+                        quarterTurns: 1,
+                        child: config.isSamsung
+                            ? _buildPunchHoleCamera(config)
+                            : _buildDynamicIsland(config),
+                      )
+                    : config.isSamsung
+                        ? _buildPunchHoleCamera(config)
+                        : _buildDynamicIsland(config),
+              );
+            }(),
+          ],
 
           // Home indicator
           if (config.showHomeIndicator)
@@ -1592,13 +1610,14 @@ class _DeviceWrapperState extends State<DeviceWrapper>
       ),
     );
 
-    if (tooltip != null) {
-      return Tooltip(
-        message: tooltip,
-        child: button,
-      );
-    }
-    return button;
+    // Avoid using Tooltip here because on some platforms it created
+    // a translucent hover overlay that looked like a gray box.
+    // Use a MouseRegion to keep pointer interactions without showing
+    // the tooltip overlay.
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: button,
+    );
   }
 
   Widget _buildToolbarDivider() {
